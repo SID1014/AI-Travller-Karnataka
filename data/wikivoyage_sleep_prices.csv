@@ -1,0 +1,88 @@
+page,tier,name,price_text,price_min_inr,price_max_inr
+Mysore,budget,Mysore Youth Hostel,₹125 per bed for non-AC dorms,125,
+Mysore,budget,Hotel Aashraya,₹500,500,
+Mysore,budget,Hotel Bombay Tiffanys,₹1000 for non-AC and ₹1600 for AC rooms,1000,
+Mysore,budget,Hotel Dasaprakash,"Single ₹500 (also for 2), double ₹700",500,
+Mysore,budget,Hotel Dasharath,₹500,500,
+Mysore,budget,Gayathri Lodge,₹500,500,
+Mysore,budget,Hotel Indra Bhavan,₹300,300,
+Mysore,budget,Hotel Komfort Suites,₹2450,2450,
+Mysore,budget,Hotel Parimala Lodge,₹300,300,
+Mysore,budget,Hotel Sudarshan,₹250,250,
+Mysore,budget,Railway Retirement Rooms,"₹100 for 24 hours. Private rooms cost ₹1,200 per night",100,
+Mysore,budget,Mannaar Residency,₹900,900,
+Mysore,budget,Uma Maheshwari Lodge,₹ 500,500,
+Mysore,mid,Sri Guru Residency,"₹2,000",2000,
+Mysore,mid,Iyengar Plaza,₹900,900,
+Mysore,mid,Maithree Lodge,₹3500,3500,
+Mysore,mid,KSR Lodge,₹1400,1400,
+Srirangapatna,,Tourist Lodge,₹500,500,
+Srirangapatna,,Orchid Residency,₹600,600,
+Srirangapatna,,Venketeshwara Lodge,₹400,400,
+Madikeri,budget,Popular Lodge,₹700,700,
+Madikeri,budget,Tourist Lodge,₹800,800,
+Madikeri,budget,Ganesh Jeeva Lodge,₹400,400,
+Madikeri,mid,Cauvery Nisarga Dhama,₹650,650,
+Madikeri,mid,Raja Darshan,₹2000,2000,
+Madikeri,mid,Silver Brook Estate,"₹2,500 per couple inclusive of breakfast",2500,
+Madikeri,mid,Capitol Village,Varies per season,,
+Madikeri,luxury,Windflower Resorts and Spa,"₹21,000",21000,
+Madikeri,luxury,Taj Madikeri Resort & Spa,"25,000",,
+Madikeri,luxury,Coorg Mariott Resort & Spa,"20,000",,
+Chikmagalur,budget,Hotel Empire,"₹1,000",1000,
+Chikmagalur,mid,Gatikallu Homestay,₹1750,1750,
+Chikmagalur,mid,Mekanagadde Homestay,₹2000,2000,
+Hassan,,Abhruchi Hotel,₹500,500,
+Hassan,,Sanman Hotel,₹400,400,
+Hassan,,Sri Vishnu Residency,₹400,400,
+Hassan,,Sanman Lodge,₹400,400,
+Hassan,,Sumukha Yathri Nivas,₹ 800,800,
+Belur,,Mayura Velapuri,"A/C rooms ₹600 per night, non-A/C rooms ₹800 per night for double room (₹200 extra for third person), dorms ₹3,000 for m",600,
+Belur,,Sudha Lodge,Non AC double room cost ₹250.,250,
+Belur,,Sumukha Residency,Tariff: Non-A/C double rooms ₹600 per night.,600,
+Belur,,Vishnu Residency,Double fan rooms cost ₹250.,250,
+Belur,,Hoysala Village Resort,"₹6,300-7,500",6300,7500
+Shravanabelagola,,Hotel Raghu,From ₹500,500,
+Shravanabelagola,,Temple Cottages,₹575 for double room,575,
+Shravanabelagola,,Biju Lodge,₹600,600,
+Mangalore,budget,Ganesh Prasad,₹275+,275,
+Mangalore,budget,Hotel Akbar,₹400,400,
+Mangalore,budget,Hotel Blue Star,₹239 for single,239,
+Mangalore,budget,Hotel Das Prakash,₹600,600,
+Mangalore,budget,Hotel Navratna,₹400,400,
+Mangalore,budget,Railway Retirement Room,₹125,125,
+Mangalore,budget,Srinivas Hotel,₹600,600,
+Mangalore,budget,Yash Arcade,₹500,500,
+Mangalore,budget,Youth Hostel,1 Family Room @ ₹150/- per rooms per day 1 Dorm of 8 beds @ ₹50/- per bed 1 Dorm of 4Beds @₹50/- per bed,150,
+Mangalore,mid,Hotel Hindusthan,₹700-1500 per day,700,1500
+Mangalore,mid,Prestige,₹1500 per day,1500,
+Mangalore,mid,Hotel Srinivas,1800 ₹,,
+Mangalore,luxury,"The Gateway Hotel (A part of Taj Hotels, Resorts and Palaces)",₹2016-6720,2016,6720
+Mangalore,luxury,Hotel Poonja International,₹672-3360,672,3360
+Mangalore,luxury,Hotel Woodside (Not to be confused with Hotel Woodside Business Hotel),"₹1300 for double with private bathroom, Air Con, Television",1300,
+Mangalore,luxury,Kumar's International,"₹750-1,680",750,1680
+Mangalore,luxury,Moti Mahal,₹518-2415,518,2415
+Mangalore,luxury,Nalapad Residency,₹650-1750,650,1750
+Mangalore,luxury,The Ocean Pearl,₹2000-4500,2000,4500
+Mangalore,luxury,The Saffron,₹1799-5000,1799,5000
+Mangalore,luxury,Srinivas,₹550-1017,550,1017
+Mangalore,luxury,Summer Sands Beach Resort,₹3000-14000,3000,14000
+Udupi,,Century Executive,"₹1,400+tax",1400,
+Udupi,,Fortune Inn Valley View,"₹4,000-10,000",4000,10000
+Udupi,,Kediyoor Hotels,₹850+tax,850,
+Udupi,,Rukmini Residency,₹800,800,
+Udupi,,Sharada International,"₹600-2,500",600,2500
+Udupi,,Udupi Residency,"₹1,400+tax",1400,
+Bandipur National Park,,Jungle Home,₹1000 to 2500,1000,2500
+Bandipur National Park,,Greenwoods Nature Camp,₹750 to ₹2500,750,2500
+Bandipur National Park,,Nilgiri resort,880/- per person including foods,,
+Nagarhole National Park,,Kabini River Lodge,"₹3,500 and above for 24 hours and 2 safaris",3500,
+Sakleshpur,,CoffeeBean Villa,"1300/person, meals and activities included",,
+Sakleshpur,,Mekanagadde Homestay,₹2000,2000,
+Sakleshpur,,Jenukallu Valley Retreat,₹3500,3500,
+Sakleshpur,,MakkiThitta Home Stay,₹1600-2500/person,1600,2500
+Sakleshpur,,Rotti-kallu,₹2500/person,2500,
+Sakleshpur,,The Hills,₹7000,7000,
+Sakleshpur,,Tusk & Dawn,₹2100/person,2100,
+Sakleshpur,,Triwoods Plantation Farmstay,₹ 4000,4000,
+Sakleshpur,,Mookanana Resort,₹3000,3000,

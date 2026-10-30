@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Karnataka trip planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  /* Palette: Hoysala soapstone, Mysore-silk indigo, zari gold, Ghats teal for focus */
+  :root {
+    --paper: #F4F6F3;
+    --panel: #E8EDE8;
+    --ink: #18223A;
+    --muted: #55607A;
+    --line: #C7D0C9;
+    --indigo: #2B3A8C;
+    --gold: #D79A00;
+    --gold-ink: #18223A;
+    --teal: #0E7C70;
+    --warn-bg: #FBF0D0;
+    --warn-line: #D79A00;
+    --bad: #A63A26;
+    --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 400 16px/1.55 var(--body); }
+  h1, h2, h3 { font-family: var(--display); line-height: 1.15; margin: 0; }
+  a { color: var(--indigo); }
+  :focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+
+  .shell { display: grid; gap: 0 40px; max-width: 1280px; margin: 0 auto; padding: 24px 24px 64px;
+    grid-template-columns: minmax(360px, 560px) 1fr;
+    grid-template-areas: "form map" "results map"; align-items: start; }
+  .form { grid-area: form; }
+  .results { grid-area: results; }
+  .map-wrap { grid-area: map; position: sticky; top: 16px; height: calc(100vh - 32px); min-height: 420px; }
+  #map { height: 100%; width: 100%; border: 1px solid var(--line); background: var(--panel); }
+
+  header.top { padding: 8px 0 20px; }
+  header.top h1 { font-size: clamp(30px, 4.4vw, 46px); font-weight: 700; letter-spacing: -0.02em; }
+  header.top p { margin: 10px 0 0; color: var(--muted); max-width: 46ch; }
+
+  /* form */
+  .panel { background: var(--panel); padding: 20px; border-left: 4px solid var(--indigo); }
+  label, legend { font-weight: 600; font-size: 14px; display: block; margin-bottom: 6px; }
+  .hint { color: var(--muted); font-weight: 400; }
+  textarea, input[type=number], select {
+    width: 100%; font: inherit; color: var(--ink); background: #fff; border: 1px solid var(--line);
+    border-radius: 3px; padding: 10px 12px; }
+  textarea { min-height: 78px; resize: vertical; }
+  .row { display: grid; gap: 14px; margin-top: 16px; }
+  .row.two { grid-template-columns: 1fr 1fr; }
+  fieldset { border: 0; padding: 0; margin: 16px 0 0; min-width: 0; }
+  .examples { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .examples button { font: inherit; font-size: 13px; background: transparent; color: var(--indigo);
+    border: 1px dashed var(--indigo); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+  .examples button:hover { background: #fff; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips input { position: absolute; opacity: 0; pointer-events: none; }
+  .chips label { margin: 0; font-weight: 500; cursor: pointer; background: #fff; border: 1px solid var(--line);
+    border-radius: 999px; padding: 6px 14px; font-size: 14px; }
+  .chips input:checked + label { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+  .chips input:focus-visible + label { outline: 3px solid var(--teal); outline-offset: 2px; }
+
+  .seg { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg label { margin: 0; text-align: center; padding: 9px 6px; background: #fff; border: 1px solid var(--line);
+    margin-left: -1px; cursor: pointer; font-weight: 500; font-size: 14px; }
+  .seg label:first-of-type { margin-left: 0; border-radius: 3px 0 0 3px; }
+  .seg label:last-of-type { border-radius: 0 3px 3px 0; }
+  .seg input:checked + label { background: var(--indigo); border-color: var(--indigo); color: #fff; position: relative; z-index: 1; }
+  .seg input:focus-visible + label { outline: 3px solid var(--teal); outline-offset: 2px; z-index: 2; }
+
+  .actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 20px; }
+  button.primary { font: 600 16px var(--body); background: var(--gold); color: var(--gold-ink); border: 0;
+    border-radius: 3px; padding: 12px 26px; cursor: pointer; }
+  button.primary:hover { background: #E6A700; }
+  button.primary[disabled] { opacity: .6; cursor: progress; }
+  .toggle { font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px; margin: 0; }
+  .status { margin-top: 12px; min-height: 22px; color: var(--muted); font-size: 14px; }
+  .status.error { color: var(--bad); font-weight: 600; }
+
+  /* results */
+  .results { margin-top: 36px; }
+  .results:empty { display: none; }
+  .results h2 { font-size: 30px; letter-spacing: -0.01em; }
+  .intro { color: var(--muted); margin: 8px 0 0; max-width: 60ch; }
+  .source-note { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .understood { margin: 18px 0 0; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    font-size: 14px; color: var(--muted); }
+  .understood b { color: var(--ink); font-weight: 600; }
+  .understood .tag { white-space: nowrap; }
+
+  .alerts { margin-top: 22px; background: var(--warn-bg); border-left: 4px solid var(--warn-line); padding: 14px 18px; }
+  .alerts h3 { font-size: 18px; margin-bottom: 8px; }
+  .alerts p { margin: 0 0 10px; font-size: 15px; }
+  .alerts p:last-child { margin-bottom: 0; }
+  .alerts .peak { font-weight: 600; }
+  details.other-prices { margin-top: 10px; font-size: 14px; }
+  details.other-prices summary { cursor: pointer; font-weight: 600; }
+
+  .day { margin-top: 34px; --day: var(--indigo); }
+  .day-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .day-head h3 { font-size: 24px; }
+  .day-head .where { font-weight: 600; color: var(--day); }
+  .day-meta { color: var(--muted); font-size: 14px; margin-top: 2px; }
+  .day-summary { margin: 8px 0 0; max-width: 60ch; }
+  .transfer { margin-top: 10px; font-size: 14px; color: var(--muted); border-left: 3px dashed var(--line); padding-left: 10px; }
+
+  .stops { list-style: none; margin: 18px 0 0; padding: 0 0 0 22px; border-left: 4px solid var(--day); }
+  .stop { position: relative; padding: 0 0 6px 24px; }
+  .stop .bead { position: absolute; left: -43px; top: 0; width: 32px; height: 32px; border-radius: 50%;
+    background: var(--day); color: #fff; font: 700 15px/32px var(--display); text-align: center;
+    border: 3px solid var(--paper); }
+  .stop .time { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .stop h4 { font: 700 19px/1.25 var(--display); margin: 1px 0 4px; }
+  .stop h4 button { all: unset; cursor: pointer; }
+  .stop h4 button:hover { text-decoration: underline; text-decoration-color: var(--day); text-underline-offset: 3px; }
+  .stop h4 button:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+  .stop .types { font-size: 13px; color: var(--muted); }
+  .stop .blurb { margin: 6px 0 0; max-width: 60ch; }
+  .stop .why { margin: 6px 0 0; font-size: 14px; color: var(--muted); }
+  .stop .why b { color: var(--ink); font-weight: 600; }
+  .stop .links { margin-top: 6px; font-size: 14px; display: flex; gap: 16px; }
+  .stop.flash { animation: flash 1.2s ease-out 1; }
+  @keyframes flash { from { background: #FFF3C4; } to { background: transparent; } }
+  .leg { padding: 12px 0 18px 24px; font-size: 14px; color: var(--muted); position: relative; }
+  .leg::before { content: ""; position: absolute; left: -26px; top: 50%; width: 22px; border-top: 3px dotted var(--day); }
+
+  .budget { margin-top: 40px; }
+  .budget h3 { font-size: 24px; margin-bottom: 10px; }
+  table.cost { width: 100%; border-collapse: collapse; font-size: 15px; }
+  table.cost td { padding: 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.cost td:last-child { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; padding-left: 16px; }
+  table.cost tr.total td { font-weight: 700; border-bottom: 2px solid var(--ink); }
+  .budget .msg { margin: 12px 0 0; font-weight: 600; }
+  .budget .msg.bad { color: var(--bad); }
+  .small { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .tips { margin: 34px 0 0; padding-top: 14px; border-top: 1px solid var(--line); }
+  .tips h3 { font-size: 20px; margin-bottom: 6px; }
+  .tips ul, .warnings ul { margin: 0; padding-left: 20px; }
+  .warnings { margin-top: 22px; border-left: 4px solid var(--bad); padding: 6px 0 6px 14px; font-size: 15px; }
+  .footer-actions { margin-top: 34px; display: flex; gap: 12px; }
+  button.secondary { font: 600 15px var(--body); background: transparent; color: var(--indigo); border: 2px solid var(--indigo);
+    border-radius: 3px; padding: 9px 18px; cursor: pointer; }
+  button.secondary:hover { background: #fff; }
+
+  .pin { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; color: #fff;
+    font: 700 13px var(--display); border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+  .pin.active { transform: scale(1.25); }
+
+  @media (max-width: 960px) {
+    .shell { grid-template-columns: 1fr; grid-template-areas: "form" "map" "results"; padding: 16px 16px 48px; }
+    .map-wrap { position: static; height: 340px; min-height: 0; margin-top: 24px; }
+    .results { margin-top: 28px; }
+  }
+  @media (max-width: 520px) { .row.two { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .stop.flash { animation: none; } }
+  @media print {
+    body { background: #fff; }
+    .form, .map-wrap, .footer-actions, .examples, .stop .links { display: none !important; }
+    .shell { display: block; padding: 0; }
+    .results { margin-top: 0; }
+    .day { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <section class="form">
+    <header class="top">
+      <h1>Plan a trip through Karnataka’s Mysuru belt</h1>
+      <p>Say what you like. We choose real places from a checked dataset, order the route so the drives stay short, then write it up.</p>
+    </header>
+
+    <form id="planForm" class="panel" novalidate>
+      <label for="freeText">Describe your trip <span class="hint">(optional, we read it for days, month, pace and more)</span></label>
+      <textarea id="freeText" maxlength="500" placeholder="3 days, temples and filter coffee, relaxed pace, in December"></textarea>
+      <div class="examples" id="examples" aria-label="Example trips"></div>
+
+      <div class="row two">
+        <div><label for="days">Days</label><input id="days" type="number" min="1" max="7" value="3"></div>
+        <div><label for="travelers">Travellers</label><input id="travelers" type="number" min="1" max="12" value="2"></div>
+      </div>
+
+      <fieldset>
+        <legend>What are you into?</legend>
+        <div class="chips" id="interests"></div>
+      </fieldset>
+
+      <div class="row two">
+        <div><label for="month">Month of travel</label><select id="month"><option value="">Not sure yet</option></select></div>
+        <div><label for="start">Start from</label><select id="start"><option value="">No preference</option></select></div>
+      </div>
+
+      <fieldset>
+        <legend>Pace</legend>
+        <div class="seg" role="radiogroup" aria-label="Pace">
+          <input type="radio" name="pace" id="pace-relaxed" value="relaxed"><label for="pace-relaxed">Relaxed</label>
+          <input type="radio" name="pace" id="pace-balanced" value="balanced" checked><label for="pace-balanced">Balanced</label>
+          <input type="radio" name="pace" id="pace-packed" value="packed"><label for="pace-packed">Packed</label>
+        </div>
+      </fieldset>
+
+      <div class="row two">
+        <div><label for="budget">Total budget in ₹ <span class="hint">(optional)</span></label><input id="budget" type="number" min="1000" step="500" placeholder="e.g. 20000"></div>
+        <div><label for="stay">Where you’d stay</label>
+          <select id="stay">
+            <option value="">Not sure yet</option>
+            <option value="budget">Budget</option>
+            <option value="mid">Mid-range</option>
+            <option value="luxury">Luxury</option>
+          </select></div>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="go" type="submit">Plan my trip</button>
+        <label class="toggle" for="useLlm"><input type="checkbox" id="useLlm" checked> Write it with AI</label>
+      </div>
+      <div class="status" id="status" role="status" aria-live="polite"></div>
+    </form>
+  </section>
+
+  <aside class="map-wrap" aria-label="Route map"><div id="map"></div></aside>
+
+  <section class="results" id="results" aria-live="polite"></section>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function () {
+  "use strict";
+  var DAY_COLORS = ["#2B3A8C", "#0E7C70", "#B87A00", "#B23A22", "#7A3E7C", "#2F6B8A", "#6B7A1F"];
+  var CATEGORY_LABELS = { "heritage": "Heritage", "culture": "Culture", "spiritual": "Spiritual", "nature": "Nature",
+    "wildlife": "Wildlife", "beach": "Beaches", "adventure": "Adventure", "food": "Food and coffee", "hill-station": "Hill stations" };
+  var EXAMPLES = [
+    "3 days, temples and filter coffee, relaxed pace, in December",
+    "Weekend with friends, beaches and seafood, 4 of us, under 15k",
+    "5 days, wildlife safari and waterfalls in July, starting from Mysore"
+  ];
+  var $ = function (id) { return document.getElementById(id); };
+  var map, layer, markers = {}, meta = null;
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function inr(n) { return "₹" + Math.round(n).toLocaleString("en-IN"); }
+  function dur(h) {
+    var m = Math.round(h * 60);
+    if (m < 60) return m + " min";
+    var r = m % 60;
+    return Math.floor(m / 60) + " h" + (r ? " " + String(r).padStart(2, "0") + " min" : "");
+  }
+  function setStatus(msg, isError) { var s = $("status"); s.textContent = msg || ""; s.className = "status" + (isError ? " error" : ""); }
+
+  /* ---------- map */
+  function initMap() {
+    map = L.map("map", { scrollWheelZoom: true }).setView([13.0, 75.9], 7);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 18, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+    layer = L.layerGroup().addTo(map);
+  }
+  function drawMap(plan) {
+    layer.clearLayers(); markers = {};
+    var all = [], prevEnd = null;
+    plan.days.forEach(function (d, di) {
+      var color = DAY_COLORS[di % DAY_COLORS.length], pts = [];
+      d.stops.forEach(function (s, si) {
+        var ll = [s.lat, s.lng]; pts.push(ll); all.push(ll);
+        var icon = L.divIcon({ className: "", iconSize: [28, 28], iconAnchor: [14, 14],
+          html: '<div class="pin" style="background:' + color + '">' + (si + 1) + "</div>" });
+        var m = L.marker(ll, { icon: icon, title: s.name }).addTo(layer);
+        m.bindPopup("<b>" + esc(s.name) + "</b><br>Day " + d.day + ", " + esc(s.arrive) + " to " + esc(s.depart));
+        m.on("click", function () { focusStop(s.id, false); });
+        markers[s.id] = m;
+      });
+      if (pts.length > 1) L.polyline(pts, { color: color, weight: 4, opacity: 0.85 }).addTo(layer);
+      if (prevEnd && pts.length) L.polyline([prevEnd, pts[0]], { color: "#7a8499", weight: 2, dashArray: "6 8" }).addTo(layer);
+      if (pts.length) prevEnd = pts[pts.length - 1];
+    });
+    if (all.length) map.fitBounds(all, { padding: [40, 40], maxZoom: 12 });
+    setTimeout(function () { map.invalidateSize(); }, 50);
+  }
+  function focusStop(id, fromList) {
+    var li = document.querySelector('[data-stop="' + id + '"]');
+    if (li) {
+      if (!fromList) li.scrollIntoView({ behavior: "smooth", block: "center" });
+      li.classList.remove("flash"); void li.offsetWidth; li.classList.add("flash");
+    }
+    var m = markers[id];
+    if (fromList && m) {
+      map.flyTo(m.getLatLng(), Math.max(map.getZoom(), 12), { duration: 0.6 });
+      m.openPopup();
+      if (window.matchMedia("(max-width: 960px)").matches) $("map").scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
+
+  /* ---------- form */
+  function buildForm(m) {
+    var ch = $("interests");
+    m.categories.forEach(function (c) {
+      ch.insertAdjacentHTML("beforeend",
+        '<input type="checkbox" id="int-' + esc(c) + '" value="' + esc(c) + '"><label for="int-' + esc(c) + '">' +
+        esc(CATEGORY_LABELS[c] || c) + "</label>");
+    });
+    m.months.forEach(function (name, i) { $("month").insertAdjacentHTML("beforeend", '<option value="' + (i + 1) + '">' + esc(name) + "</option>"); });
+    m.clusters.forEach(function (c) { $("start").insertAdjacentHTML("beforeend", '<option value="' + esc(c) + '">' + esc(c) + "</option>"); });
+    if (m.llm === "off") {
+      $("useLlm").checked = false; $("useLlm").disabled = true;
+      $("useLlm").parentNode.title = "No AI key is configured on the server, so text is written from templates.";
+    }
+  }
+  function buildExamples() {
+    EXAMPLES.forEach(function (t) {
+      var b = document.createElement("button"); b.type = "button"; b.textContent = t;
+      b.addEventListener("click", function () { $("freeText").value = t; $("freeText").focus(); });
+      $("examples").appendChild(b);
+    });
+  }
+  function readForm() {
+    var interests = Array.prototype.map.call(document.querySelectorAll("#interests input:checked"), function (i) { return i.value; });
+    var num = function (id) { var v = parseInt($(id).value, 10); return isNaN(v) ? null : v; };
+    return {
+      days: num("days"), travelers: num("travelers"), interests: interests,
+      month: $("month").value ? parseInt($("month").value, 10) : null,
+      start_cluster: $("start").value || null,
+      pace: (document.querySelector('input[name="pace"]:checked') || {}).value || "balanced",
+      budget_inr: num("budget"), stay_type: $("stay").value || null,
+      free_text: $("freeText").value.trim(), use_llm: $("useLlm").checked
+    };
+  }
+
+  /* ---------- rendering */
+  function understoodHtml(u) {
+    var fm = u.from_message || [], parts = [];
+    var mark = function (k) { return fm.indexOf(k) >= 0 ? ' <span class="tag">(from your message)</span>' : ""; };
+    parts.push("<b>" + u.days + " day" + (u.days > 1 ? "s" : "") + "</b>" + mark("days"));
+    parts.push("<b>" + u.travelers + " traveller" + (u.travelers > 1 ? "s" : "") + "</b>" + mark("travelers"));
+    parts.push("<b>" + esc(u.pace) + " pace</b>" + mark("pace"));
+    if (u.month_name) parts.push("<b>" + esc(u.month_name) + "</b>" + mark("month"));
+    if (u.start_cluster) parts.push("starting in <b>" + esc(u.start_cluster) + "</b>" + mark("start_cluster"));
+    if (u.interests && u.interests.length) parts.push("interested in <b>" + u.interests.map(function (i) { return esc(CATEGORY_LABELS[i] || i); }).join(", ") + "</b>" + mark("interests"));
+    var by = u.parsed_by === "llm" ? "Your message was read by AI." : (u.parsed_by === "rules" ? "Your message was read by keyword matching." : "");
+    return "We planned for " + parts.join("; ") + ". " + by;
+  }
+  function alertsHtml(alerts) {
+    var hot = alerts.filter(function (a) { return a.price_level === "high" || a.price_level === "very_high"; });
+    var rest = alerts.filter(function (a) { return hot.indexOf(a) < 0; });
+    if (!hot.length && !rest.length) return "";
+    var h = '<div class="alerts"><h3>' + (hot.length ? "Heads up on prices" : "Prices on your route") + "</h3>";
+    hot.forEach(function (a) {
+      h += "<p><b>" + esc(a.cluster) + ".</b> " + esc(a.alert) +
+        (a.in_peak_season ? ' <span class="peak">You are travelling in peak season here.</span>' : "") + "</p>";
+    });
+    if (rest.length) {
+      h += '<details class="other-prices"><summary>Other areas on this route</summary>';
+      rest.forEach(function (a) {
+        h += "<p><b>" + esc(a.cluster) + ".</b> " + esc(a.alert) +
+          (a.in_peak_season ? " Peak season applies." : "") + "</p>";
+      });
+      h += "</details>";
+    }
+    return h + "</div>";
+  }
+  function dayHtml(d, di, nday) {
+    var color = DAY_COLORS[di % DAY_COLORS.length];
+    var h = '<article class="day" style="--day:' + color + '">';
+    h += '<div class="day-head"><h3>Day ' + d.day + '</h3><span class="where">' + esc(d.base_cluster) + "</span></div>";
+    h += '<div class="day-meta">' + esc(d.start_time) + " to " + esc(d.end_time) + ", about " + dur(d.travel_hours) + " driving</div>";
+    if (nday && nday.summary) h += '<p class="day-summary">' + esc(nday.summary) + "</p>";
+    if (d.transfer_from_previous_day) {
+      var t = d.transfer_from_previous_day;
+      h += '<div class="transfer">Getting here from day ' + (d.day - 1) + ": " + t.km + " km, about " + dur(t.hours) + ".</div>";
+    }
+    if (d.from_origin && d.from_origin.km > 3) {
+      h += '<div class="transfer">From your start area: ' + d.from_origin.km + " km, about " + dur(d.from_origin.hours) + ".</div>";
+    }
+    h += '<ol class="stops">';
+    var blurbs = {};
+    ((nday && nday.stops) || []).forEach(function (s) { blurbs[s.id] = s.blurb; });
+    d.stops.forEach(function (s, si) {
+      h += '<li class="stop" data-stop="' + esc(s.id) + '"><span class="bead" aria-hidden="true">' + (si + 1) + "</span>";
+      h += '<div class="time">' + esc(s.arrive) + " to " + esc(s.depart) + "</div>";
+      h += '<h4><button type="button" data-focus="' + esc(s.id) + '" title="Show on map">' + esc(s.name) + "</button></h4>";
+      h += '<div class="types">' + s.categories.map(function (c) { return esc(CATEGORY_LABELS[c] || c); }).join(", ") + "</div>";
+      if (blurbs[s.id]) h += '<p class="blurb">' + esc(blurbs[s.id]) + "</p>";
+      if (s.reasons && s.reasons.length) h += '<p class="why"><b>Why this place:</b> ' + s.reasons.map(esc).join("; ") + ".</p>";
+      h += '<div class="links"><a href="' + esc(s.maps_url) + '" target="_blank" rel="noopener">Open in Google Maps</a>';
+      if (s.source_url) h += '<a href="' + esc(s.source_url) + '" target="_blank" rel="noopener">Read more</a>';
+      h += "</div></li>";
+      var next = d.stops[si + 1];
+      if (next) h += '<li class="leg" aria-hidden="false">' + next.travel_from_prev_km + " km, " + dur(next.travel_from_prev_hours) + " drive to the next stop</li>";
+    });
+    return h + "</ol></article>";
+  }
+  function budgetHtml(b) {
+    var h = '<section class="budget"><h3>What it may cost</h3><table class="cost">';
+    h += "<tr><td>Entry fees for " + b.travelers + " traveller" + (b.travelers > 1 ? "s" : "") +
+      (b.places_with_unknown_fee ? '<div class="small">' + b.places_with_unknown_fee + " place(s) have no fee on file, so this may be low.</div>" : "") +
+      "</td><td>" + inr(b.entry_fees_total_inr) + "</td></tr>";
+    if (b.stay) {
+      h += "<tr><td>Stay: " + b.stay.nights + " night" + (b.stay.nights > 1 ? "s" : "") + ", " + b.stay.rooms + " room" + (b.stay.rooms > 1 ? "s" : "") +
+        ", " + esc(b.stay.tier === "mid" ? "mid-range" : b.stay.tier) + '<div class="small">' + esc(b.stay.note) + "</div></td><td>" + inr(b.stay.total_inr) + "</td></tr>";
+    } else {
+      h += '<tr><td>Stay<div class="small">Choose where you’d stay to include a rough estimate.</div></td><td>Not included</td></tr>';
+    }
+    h += '<tr class="total"><td>Known costs so far</td><td>' + inr(b.known_total_inr) + "</td></tr></table>";
+    if (b.message) h += '<p class="msg' + (b.over_budget ? " bad" : "") + '">' + esc(b.message) + "</p>";
+    return h + '<p class="small">' + esc(b.not_included) + "</p></section>";
+  }
+  function render(res) {
+    var plan = res.plan, n = res.narrative || {}, html = "";
+    if (!plan.days.length) {
+      $("results").innerHTML = "<h2>No matching places</h2><p class=\"intro\">Try more interests, a different month, or a longer trip.</p>";
+      layer.clearLayers(); return;
+    }
+    html += "<h2>" + esc(n.title || "Your itinerary") + "</h2>";
+    if (n.intro) html += '<p class="intro">' + esc(n.intro) + "</p>";
+    var src = n.source === "llm" ? "Written by AI, using only the places in this plan."
+      : n.source === "mixed" ? "Written by AI, with template text where a sentence did not pass our checks."
+      : "Written from templates (AI is off or unavailable).";
+    html += '<div class="source-note">' + src + (n.note ? " " + esc(n.note) : "") + "</div>";
+    html += '<div class="understood">' + understoodHtml(res.understood) + "</div>";
+    html += alertsHtml(res.alerts || []);
+    var nd = {}; (n.days || []).forEach(function (d) { nd[d.day] = d; });
+    plan.days.forEach(function (d, i) { html += dayHtml(d, i, nd[d.day]); });
+    if (n.tips && n.tips.length) html += '<section class="tips"><h3>Good to know</h3><ul>' + n.tips.map(function (t) { return "<li>" + esc(t) + "</li>"; }).join("") + "</ul></section>";
+    html += budgetHtml(res.budget);
+    if (plan.warnings && plan.warnings.length) html += '<div class="warnings"><ul>' + plan.warnings.map(function (w) { return "<li>" + esc(w) + "</li>"; }).join("") + "</ul></div>";
+    html += '<div class="footer-actions"><button type="button" class="secondary" id="printBtn">Save as PDF</button></div>';
+    html += '<p class="small">Opening hours change, so check them before you go. Drive times are estimates.</p>';
+    $("results").innerHTML = html;
+    drawMap(plan);
+    $("printBtn").addEventListener("click", function () { window.print(); });
+  }
+
+  /* ---------- submit */
+  async function submit(ev) {
+    ev.preventDefault();
+    var btn = $("go"); btn.disabled = true; btn.textContent = "Planning…";
+    setStatus("Choosing places and ordering the route. AI writing can take a few seconds.");
+    var ctl = new AbortController(), timer = setTimeout(function () { ctl.abort(); }, 70000);
+    try {
+      var r = await fetch("/api/plan", { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(readForm()), signal: ctl.signal });
+      if (!r.ok) {
+        var detail = ""; try { detail = (await r.json()).detail; } catch (e) {}
+        if (Array.isArray(detail)) detail = "Please check the form: days must be 1 to 7 and travellers 1 to 12.";
+        throw new Error(detail || ("The server returned " + r.status + "."));
+      }
+      var res = await r.json();
+      render(res);
+      var m = res.meta;
+      setStatus("Done in " + m.seconds + " s. Text by " + (m.llm === "off" ? "templates" : "AI") + ".");
+      $("results").scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (e) {
+      setStatus(e.name === "AbortError" ? "That took too long. Try again, or untick “Write it with AI”." :
+        "Could not plan the trip: " + e.message, true);
+    } finally { clearTimeout(timer); btn.disabled = false; btn.textContent = "Plan my trip"; }
+  }
+
+  async function init() {
+    initMap(); buildExamples();
+    try {
+      var r = await fetch("/api/meta"); if (!r.ok) throw new Error(r.status);
+      meta = await r.json(); buildForm(meta);
+    } catch (e) {
+      setStatus("The planner server is not reachable. Start it and reload this page.", true);
+      $("go").disabled = true;
+    }
+    $("planForm").addEventListener("submit", submit);
+    $("results").addEventListener("click", function (ev) {
+      var b = ev.target.closest("[data-focus]"); if (b) focusStop(b.getAttribute("data-focus"), true);
+    });
+  }
+  init();
+})();
+</script>
+</body>
+</html>
