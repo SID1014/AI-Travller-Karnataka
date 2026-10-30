@@ -218,3 +218,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+# backend/applymannualfixes.py
+# backend/checkCords.py
+# backend/collectplacesv2.py
+# backend.fillPlanner
